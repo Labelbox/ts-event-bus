@@ -45,6 +45,13 @@ interface SlotConfig {
     // This option will prevent the slot from buffering the
     // requests if no remote handlers are set for some transports.
     noBuffer?: boolean
+
+    // This option will ensure only one handler can be attached to the slot
+    isCommand?: boolean
+
+    // This option will cause an error to be thrown if slot is triggered with no handlers
+    // Default: true if isCommand, otherwise false
+    throwIfNoHandler?: boolean
 }
 
 /**
@@ -87,7 +94,7 @@ export interface Slot<RequestData=null, ResponseData=void> {
  * Slots need to be connected in order to be functional.
  */
 export function slot<RequestData=void, ResponseData=void>(
-    config: SlotConfig = { noBuffer: false }
+    config: SlotConfig = { noBuffer: false, isCommand: false }
 ): Slot<RequestData, ResponseData> {
     return Object.assign(notConnectedSlot, config)
 }
@@ -214,10 +221,11 @@ export function connectSlot<T=void, T2=void>(
         const paramUsed = arguments.length === 2
         const data: any = paramUsed ? secondArg : firstArg
         const param: string = paramUsed ? firstArg : DEFAULT_PARAM
+        const shouldThrow = config.throwIfNoHandler === undefined ? !!config.isCommand : config.throwIfNoHandler
 
         if (config.noBuffer || transports.length === 0) {
             const allParamHandlers = getParamHandlers(param, handlers)
-            return callHandlers(data, allParamHandlers)
+            return callHandlers(data, shouldThrow, allParamHandlers)
         }
 
         else {
@@ -236,7 +244,7 @@ export function connectSlot<T=void, T2=void>(
 
             return Promise.all(transportPromises).then(() => {
                 const allParamHandlers = getParamHandlers(param, handlers)
-                return callHandlers(data, allParamHandlers)
+                return callHandlers(data, shouldThrow, allParamHandlers)
             })
         }
     }
@@ -304,6 +312,10 @@ export function connectSlot<T=void, T2=void>(
         else {
             param = DEFAULT_PARAM
             handler = paramOrHandler
+        }
+
+        if (config.isCommand && handlers[LOCAL_TRANSPORT][param] && handlers[LOCAL_TRANSPORT][param].length > 0) {
+            throw new Error("Slot is a command and already has registered handler")
         }
 
         // Register a remote handler with all of our remote transports

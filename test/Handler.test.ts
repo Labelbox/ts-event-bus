@@ -6,9 +6,19 @@ import { callHandlers } from '../src/Handler'
 describe('callHandlers()', () => {
 
     context('with no handler', () => {
-        it('should return a Promise', () => {
-            const result = callHandlers('my-data', [])
-            result.should.have.property('then').which.is.a.Function()
+        it('should resolve if throwOnEmptyHandlers is false', () => {
+            callHandlers('my-data', false, [])
+                .then(() => {
+
+                })
+
+        })
+        it('should reject if throwOnEmptyHandlers is true', () => {
+            const error = new Error('No handlers registered')
+            callHandlers('my-data', true, [])
+                .catch(err => {
+                    err.should.equal(error)
+                })
         })
     })
 
@@ -17,7 +27,7 @@ describe('callHandlers()', () => {
         it('should call this handler with the given data', () => {
             const handlerSpy = sinon.spy()
             const data = 'my-data'
-            return callHandlers(data, [handlerSpy])
+            return callHandlers(data, true, [handlerSpy])
                 .then(() => {
                     sinon.assert.calledOnce(handlerSpy)
                     sinon.assert.calledWith(handlerSpy, data)
@@ -31,7 +41,7 @@ describe('callHandlers()', () => {
                 const handlerStub = () => {
                     throw error
                 }
-                return callHandlers('my-data', [handlerStub])
+                return callHandlers('my-data', true, [handlerStub])
                     .catch(err => {
                         err.should.equal(error)
                     })
@@ -44,7 +54,7 @@ describe('callHandlers()', () => {
                 const promise = new Promise((resolve) => { resolve('toto') })
                 const handlerStub = sinon.stub().returns(promise)
 
-                const result = callHandlers('my-data', [handlerStub])
+                const result = callHandlers('my-data', true, [handlerStub])
                 result.should.equal(promise)
                 return result.then(res => {
                     res.should.equal('toto')
@@ -58,7 +68,7 @@ describe('callHandlers()', () => {
                 const data = 'result'
                 const handlerStub = sinon.stub().returns(data)
 
-                const result = callHandlers('my-data', [handlerStub])
+                const result = callHandlers('my-data', true, [handlerStub])
                 result.should.have.property('then').which.is.a.Function()
 
                 return result
@@ -73,7 +83,7 @@ describe('callHandlers()', () => {
         it('should call all of them with the same given data', async () => {
             const handlerSpies = [sinon.spy(), sinon.spy()]
             const data = 'my-data'
-            await callHandlers(data, handlerSpies)
+            await callHandlers(data, true, handlerSpies)
             sinon.assert.calledOnce(handlerSpies[0])
             sinon.assert.calledOnce(handlerSpies[1])
             sinon.assert.calledWith(handlerSpies[0], data)

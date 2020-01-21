@@ -136,7 +136,7 @@ export class Transport {
         if (!handlers) return
 
         // Call local handlers with the request data
-        callHandlers(data, handlers)
+        callHandlers(data, false, handlers)
             // If the resulting promise is fulfilled, send a response to the far end
             .then(response => this._channel.send({
                 type: 'response',

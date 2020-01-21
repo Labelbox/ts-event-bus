@@ -37,10 +37,12 @@ function callOneHandler(h: Handler<any>, data: any): Promise<any> {
  * handlers have been successfully called and fulfilled is returned, but the results
  * of all these handlers is discarded.
  */
-export function callHandlers(data: any, handlers: Handler<any, any>[]): Promise<any> {
+export function callHandlers(data: any, throwOnEmptyHandlers: boolean, handlers: Handler<any, any>[]): Promise<any> {
     if (!handlers || handlers.length === 0) {
-        // No one is listening
-        return new Promise(resolve => { /* NOOP, this promise will never resolve */ })
+        if (throwOnEmptyHandlers) {
+            return Promise.reject("No handlers registered")
+        }
+        return Promise.resolve()
     } else if (handlers.length === 1) {
         return callOneHandler(handlers[0], data)
     } else {
