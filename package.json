@@ -1,6 +1,6 @@
 {
   "name": "@labelbox/message-bus",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Distributed messaging in Typescript",
   "main": "build/index.js",
   "typings": "build/index.d.ts",
